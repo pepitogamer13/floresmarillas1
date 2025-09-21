@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>ella sabia que el sabia</title>
+<style>
+  :root{
+    --card-width:360px;
+    --card-radius:28px;
+  }
+  html,body{ height:100%; margin:0; }
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family: Inter, system-ui, Arial, sans-serif;
+    background: linear-gradient(180deg,#ffb6c1 0%, #ffc0cb 50%, #ffdde1 100%);
+    overflow:hidden;
+    position:relative;
+  }
+
+  /* pétalos */
+  .petal-container{
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    overflow: hidden;
+  }
+
+  /* tarjeta */
+  .card{
+    width:var(--card-width);
+    max-width:88vw;
+    border-radius:var(--card-radius);
+    background: linear-gradient(180deg, rgba(12,8,18,0.55), rgba(8,6,12,0.8));
+    box-shadow: 0 30px 80px rgba(3,2,6,0.7), inset 0 1px 0 rgba(255,255,255,0.02);
+    padding:20px;
+    position:relative;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:flex-start;
+    z-index: 2;
+  }
+
+  .title{
+    margin-top:8px;
+    color: #ffd95b;
+    font-weight:700;
+    font-size:18px;
+    text-shadow: 0 3px 12px rgba(0,0,0,0.6);
+    text-align:center;
+    width:100%;
+  }
+
+  .bouquet{
+    margin-top:18px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    pointer-events:none;
+  }
+  .bouquet img{
+    width:220px;
+    max-width:78%;
+    border-radius:10px;
+    filter: drop-shadow(0 12px 30px rgba(0,0,0,0.6));
+    animation: floaty 4.8s ease-in-out infinite;
+  }
+  @keyframes floaty{
+    0%{ transform: translateY(0) }
+    50%{ transform: translateY(-12px) }
+    100%{ transform: translateY(0) }
+  }
+
+  /* botón único */
+  .music-btn {
+    margin-top: 20px;
+    background: linear-gradient(135deg, #ff4d6d, #ff85a1);
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 30px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    transition: transform 0.2s, box-shadow 0.3s;
+  }
+  .music-btn:hover {
+    transform: scale(1.08);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.3);
+  }
+  .music-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  /* pétalo */
+  .petal{
+    position:absolute;
+    width:40px; height:24px;
+    background-repeat:no-repeat;
+    background-size:contain;
+    will-change: transform, opacity;
+    opacity:0.95;
+    transform-origin: center;
+    pointer-events:none;
+  }
+
+  @keyframes fall {
+    0%{ transform: translateY(-12vh) rotate(var(--rot,0deg)) translateX(0) scale(var(--s,1)); opacity:0; }
+    10%{ opacity:1; }
+    80%{ opacity:1; }
+    100%{ transform: translateY(120vh) rotate(calc(var(--rot,0deg) + 720deg)) translateX(var(--xShift,0px)) scale(var(--s,1)); opacity:0; }
+  }
+</style>
+</head>
+<body>
+  <!-- pétalos -->
+  <div class="petal-container" id="petalContainer" aria-hidden="true"></div>
+
+  <!-- card -->
+  <div class="card" role="main" aria-label="Ramo">
+    <div class="title">vos te mereces las flores amarillas de todas las formas mailov</div>
+
+    <div class="bouquet">
+      <img src="giphy.gif" alt="Ramo animado">
+    </div>
+
+    <!-- botón -->
+    <audio id="bgMusic" loop>
+      <source src="SSvid.net--Floricienta-Flores-Amarillas-Letra.mp3" type="audio/mpeg">
+    </audio>
+    <button id="playMusic" class="music-btn">ELLA SABIA...</button>
+  </div>
+
+<script>
+/* pétalos */
+const PETAL_SVG = `
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 40'>
+  <defs>
+    <linearGradient id='g' x1='0' x2='1'>
+      <stop offset='0' stop-color='#fff5b8'/>
+      <stop offset='0.45' stop-color='#ffd54a'/>
+      <stop offset='1' stop-color='#ffb300'/>
+    </linearGradient>
+  </defs>
+  <path d='M10 20 C 14 2, 46 2, 50 20 C46 36, 14 36, 10 20 Z' fill='url(#g)' stroke='#e6a900' stroke-opacity='0.35' stroke-width='1'/>
+</svg>`;
+const PETAL_DATA_URL = `url("data:image/svg+xml;utf8,${encodeURIComponent(PETAL_SVG)}")`;
+const container = document.getElementById('petalContainer');
+
+function createPetal(){
+  const el = document.createElement('div');
+  el.className = 'petal';
+  el.style.backgroundImage = PETAL_DATA_URL;
+
+  const s = (Math.random() * 0.9) + 0.6;
+  el.style.width = `${40 * s}px`;
+  el.style.height = `${24 * s}px`;
+
+  el.style.left = `${Math.random() * window.innerWidth}px`;
+  el.style.top = `${-Math.random() * 18 - 8}vh`;
+
+  const rot = Math.round((Math.random() * 160) - 80);
+  const xShift = `${Math.round((Math.random() * 500) - 250)}px`;
+
+  const dur = (Math.random() * 10) + 10;
+  const delay = Math.random() * -20;
+
+  el.style.setProperty('--rot', rot + 'deg');
+  el.style.setProperty('--s', s);
+  el.style.setProperty('--xShift', xShift);
+  el.style.animation = `fall ${dur}s linear ${delay}s infinite`;
+  el.style.opacity = `${0.85 + Math.random() * 0.15}`;
+
+  container.appendChild(el);
+
+  if (container.children.length > 100) {
+    container.removeChild(container.firstChild);
+  }
+}
+setInterval(createPetal, 200);
+
+/* botón música (solo play, luego desactivado) */
+const btn = document.getElementById("playMusic");
+const music = document.getElementById("bgMusic");
+
+btn.addEventListener("click", () => {
+  music.play();
+  btn.textContent = "Y VOS TE QUEJABAS MOCOSA";
+  btn.disabled = true;
+});
+</script>
+</body>
+</html>
